@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from utils import weight_init
 
-def fcn8(images, mean = None, num_classes = 21,  scope = 'fcn_8s'):
+def fcn8(images,  mean = None, num_classes = 21,  scope = 'fcn_8s'):
     '''
     Args:
     images: 4-d input tensor
@@ -85,10 +85,12 @@ def fcn8(images, mean = None, num_classes = 21,  scope = 'fcn_8s'):
         return upscore2, score
 def main():
     images = tf.placeholder("float",[None,329,329,3])
+    images = tf.placeholder("float", [None, None, None, 3])
     im = misc.imread('data/1.jpg')
     im = misc.imresize(im,(329, 329))
     im = im - np.array((104.00698793,116.66876762,122.67891434))
     im = np.expand_dims(im, axis = 0)
+    images = tf.constant(im)
     pool5, infer = fcn8(images)
     sess = tf.Session()
     sess.run(tf.initialize_all_variables())
@@ -111,6 +113,8 @@ def debug():
     im = np.expand_dims(im, axis=0)
     with tf.Graph().as_default():
         images = tf.placeholder("float", [None, 329, 329, 3])
+        images = tf.placeholder("float", [None, None, None, 3])
+        iamges.set_shape((1,329,329,3))
         with tf.Session() as sess:
             pool5, infer = fcn8(images)
             sess.run(tf.initialize_all_variables())
@@ -119,4 +123,3 @@ def debug():
                 print op.name
 if __name__ == '__main__':
     main()
-

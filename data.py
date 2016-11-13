@@ -1,10 +1,14 @@
 import tensorflow as tf
 import config
 import numpy as np
+import os
 FLAGS = tf.app.flags.FLAGS
 from PIL import Image
-
+from scipy import misc
 class VocData():
+    '''
+    This is the data class for mxnet
+    '''
     def __init__(self, flist_name,rgb_mean,voc_dir = FLAGS.voc_dir):
         self.voc_dir = voc_dir
         self.flist_name = os.path.join(self.voc_dir, flist_name)
@@ -50,6 +54,44 @@ class VocData():
         return [(k, tuple([1] + list(v.shape[1:]))) for k, v in self.data]
     def provide_label(self):
         return [(k, tuple([1] + list(v.shape[1:]))) for k, v in self.label]
+class vocdata(): 
+    def __init__(self, voc_dir = FLAGS.voc_dir):
+        self.voc_dir = voc_dir
+        self.label_dir = os.path.join(self.voc_dir, 'SegmentationClass')
+        self.imgs_dir = os.path.join(self.voc_dir, 'JPEGImages')
+        #self.filelist = filelist
+        #self.mean = rgb_mean
+        self.f = self.make_file_list()
+    def make_file_list(self):
+        image_list = os.listdir(self.label_dir)
+        return image_list
+    def transform_label(self, label):
+        ans = np.zeros(label.shape)
+        for i in range(label.shape[0]):
+            if label[i] == 255:
+                ans[i] = 0
+            else:
+                ans[i] = label[i]
+        return ans
+    def load_one_image(self, img_idx):
+        '''
+        load one image for the reson that voc images have various size
+        '''
+        img_name = self.f[img_idx].split('.')[0]
+        img_path = os.path.join(self.imgs_dir, img_name+'.jpg')
+        label_path = os.path.join(self.label_dir, img_name+'.png')
+        img = Image.open(img_path)
+        label = Image.open(label_path)
+        img = np.array(img)
+        label = np.array(label)
+        label = label.ravel()
+        label = self.transform_label(label)
+        return img, label
+if __name__ == '__main__':
+    voc = vocdata()
+    image, label = voc.load_one_image(0)
+    misc.imshow(image) 
+
 
 
 
