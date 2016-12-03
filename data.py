@@ -4,6 +4,7 @@ import numpy as np
 import os
 FLAGS = tf.app.flags.FLAGS
 from PIL import Image
+import PIL
 from scipy import misc
 class VocData():
     '''
@@ -73,7 +74,7 @@ class vocdata():
             else:
                 ans[i] = label[i]
         return ans
-    def load_one_image(self, img_idx):
+    def load_one_image(self, img_idx, resize = True, mean = np.array((104.00698793, 116.66876762, 122.67891434))):
         '''
         load one image for the reson that voc images have various size
         '''
@@ -82,14 +83,24 @@ class vocdata():
         label_path = os.path.join(self.label_dir, img_name+'.png')
         img = Image.open(img_path)
         label = Image.open(label_path)
-        img = np.array(img)
+        if resize:
+            size = (224, 224)
+            img = img.resize(size, Image.ANTIALIAS)
+            label = label.resize(size, Image.ANTIALIAS)
         label = np.array(label)
+        img = np.array(img)
+        img = img-mean
+        img = np.expand_dims(img, axis = 0)
         label = label.ravel()
         label = self.transform_label(label)
+        label = np.expand_dims(label, axis = 0)
+        label = np.reshape(label, [1, 224, 224, 1])
         return img, label
 if __name__ == '__main__':
     voc = vocdata()
     image, label = voc.load_one_image(0)
+    print image.shape
+    print label.shape
     misc.imshow(image) 
 
 

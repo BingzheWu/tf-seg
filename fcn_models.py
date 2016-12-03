@@ -89,23 +89,27 @@ def fcn8(images, shape ,  mean = None, num_classes = 21,  scope = 'fcn_8s'):
         upscore8 = slim.conv2d_transpose(fuse_pool3, num_classes, [16, 16], stride = 8, scope = 'upscore8', weights_initializer = weight_init('upscore8.npy'), activation_fn = None)
         score = tf.image.resize_bilinear(upscore8, images.get_shape().as_list()[1:3])
         return upscore2, score
-def fcn8_(images, shape, mean = None, num_classes = 21,  scope = 'fcn_8s'):
+def fcn8_(images, mean = None, num_classes = 21,  scope = 'fcn_8s'):
     '''
     Args:
     images: 4-d input tensor
     mean: the mean values of pixels 
     num_classes: num of classes 
     '''
+    #image = tf.fill(tf.shape(images), data)
+    #image = tf.constant(data, dtype = tf.float32)
+    
+    image = images
     with tf.variable_scope(scope, 'fcn8s', [images]) as sc:
-        images.set_shape(shape)
-        #images = tf.pad(images, [[0, 0], [100, 100], [100, 100], [0, 0]])
+        #images.set_shape(shape)
+        image = tf.pad(image, [[0, 0], [100, 100], [100, 100], [0, 0]])
         if mean:
             images = tf.sub(images, mean)
-        conv1_1 = slim.conv2d(images,64, [3,3], scope = 'conv1_1',  weights_initializer = weight_init('conv1_1_conv.npy'), 
+        conv1_1 = slim.conv2d(image,64, [3,3], scope = 'conv1_1',  weights_initializer = weight_init('conv1_1_conv.npy'), 
                 biases_initializer = weight_init('conv1_1_bias.npy') ,padding = 'VALID' )
         conv1_2 = slim.conv2d(conv1_1,64, [3,3], scope = 'conv1_2',  weights_initializer = weight_init('conv1_2_conv.npy'), 
                 biases_initializer = weight_init('conv1_2_bias.npy') ,padding = 'SAME' )
-        pool1 = slim.max_pool2d(conv1_2, [2,2], stride = 2,  scope = 'pool1')
+        pool1 = slim.max_pool2d(conv1_2, [2,2], stride = 2,  scope = 'pool1', padding = 'VALID')
         conv2_1 = slim.conv2d(pool1, 128, [3,3], scope = 'conv2_1',  weights_initializer = weight_init('conv2_1_conv.npy'), 
                 biases_initializer = weight_init('conv2_1_bias.npy') ,padding = 'SAME' )
         conv2_2 = slim.conv2d(conv2_1, 128, [3,3], scope = 'conv2_2',  weights_initializer = weight_init('conv2_2_conv.npy'), 
@@ -117,21 +121,21 @@ def fcn8_(images, shape, mean = None, num_classes = 21,  scope = 'fcn_8s'):
                 biases_initializer = weight_init('conv3_2_bias.npy') ,padding = 'SAME' )
         conv3_3 = slim.conv2d(conv3_2, 256, [3,3], scope = 'conv3_3', weights_initializer = weight_init('conv3_3_conv.npy'), 
                 biases_initializer = weight_init('conv3_3_bias.npy') ,padding = 'SAME' )
-        pool3 = slim.max_pool2d(conv3_3, [2,2], stride = 2, scope = 'pool3')
+        pool3 = slim.max_pool2d(conv3_3, [2,2], stride = 2, scope = 'pool3', padding = 'VALID')
         conv4_1 = slim.conv2d(pool3, 512, [3,3], scope = 'conv4_1',weights_initializer = weight_init('conv4_1_conv.npy'), 
                 biases_initializer = weight_init('conv4_1_bias.npy') ,padding = 'SAME' )
         conv4_2 = slim.conv2d(conv4_1, 512, [3,3], scope = 'conv4_2',  weights_initializer = weight_init('conv4_2_conv.npy'), 
                 biases_initializer = weight_init('conv4_2_bias.npy') ,padding = 'SAME' )
         conv4_3 = slim.conv2d(conv4_2, 512, [3,3], scope = 'conv4_3',  weights_initializer = weight_init('conv4_3_conv.npy'), 
                 biases_initializer = weight_init('conv4_3_bias.npy') ,padding = 'SAME' )
-        pool4 = slim.max_pool2d(conv4_3,[2,2], scope = 'pool4' )
+        pool4 = slim.max_pool2d(conv4_3,[2,2], scope = 'pool4', padding = 'VALID' )
         conv5_1 = slim.conv2d(pool4, 512, [3,3], scope = 'conv5_1', weights_initializer = weight_init('conv5_1_conv.npy'), 
                 biases_initializer = weight_init('conv5_1_bias.npy') ,padding = 'SAME' )
         conv5_2 = slim.conv2d(conv5_1, 512, [3,3], scope = 'conv5_2', weights_initializer = weight_init('conv5_2_conv.npy'), 
                 biases_initializer = weight_init('conv5_2_bias.npy') ,padding = 'SAME' )
         conv5_3 = slim.conv2d(conv5_2, 512, [3,3], scope = 'conv5_3',  weights_initializer = weight_init('conv5_3_conv.npy'), 
                 biases_initializer = weight_init('conv5_3_bias.npy') ,padding = 'SAME' )
-        pool5 = slim.max_pool2d(conv5_3, [2,2], scope = 'pool5')
+        pool5 = slim.max_pool2d(conv5_3, [2,2], scope = 'pool5', padding = 'VALID')
         fc6 = slim.conv2d(pool5, 4096, [7,7], scope = 'fc6', padding = 'VALID', weights_initializer = weight_init('fc6_conv.npy'),
                 biases_initializer = weight_init('fc6_bias.npy'))
         fc7 = slim.conv2d(fc6, 4096, [1,1], scope = 'fc7', padding = 'VALID', weights_initializer = weight_init('fc7_conv.npy'),
@@ -149,19 +153,18 @@ def fcn8_(images, shape, mean = None, num_classes = 21,  scope = 'fcn_8s'):
         score_pool3c = tf.image.resize_bilinear(score_pool3, upscore_pool4.get_shape().as_list()[1:3])
         fuse_pool3 = tf.add(upscore_pool4, score_pool3c)
         upscore8 = slim.conv2d_transpose(fuse_pool3, num_classes, [16, 16], stride = 8, scope = 'upscore8', weights_initializer = weight_init('upscore8.npy'), activation_fn = None)
-        score = tf.image.resize_bilinear(upscore8, images.get_shape().as_list()[1:3])
-        score = tf.image.resize_bilinear(upscore8, [shape[1], shape[2]] )
+        score = tf.image.resize_bilinear(upscore8, image.get_shape().as_list()[1:3])
         return score, score
 def main():
-    images = tf.placeholder("float", [None, None, None, 3])
+    images = tf.placeholder(tf.float32, shape = (1, 224, 224, 3))
     im = misc.imread('data/2.jpg')
-    print im.shape
-    #im = misc.imresize(im,(300, 300))
+    im = misc.imresize(im,(224, 224))
     im = im - np.array((104.00698793,116.66876762,122.67891434))
     im = np.expand_dims(im, axis = 0)
-    pool5, infer = fcn8(images, im.shape)
+    pool5, infer = fcn8_(images)
     sess = tf.Session()
     sess.run(tf.initialize_all_variables())
+    print images.get_shape()
     pool5, result = sess.run([pool5, infer], feed_dict = {images:im})
     out = result.argmax(axis =3)
     color_bar = labelcolormap(21)
@@ -171,7 +174,6 @@ def main():
             result_list.append(color_bar[out[i][j]])
     result_list = np.array(result_list)
     result_list = result_list.reshape((out.shape[1],out.shape[2],3))
-    print pool5
     plt.imshow(result_list)
     plt.show()
 def debug():
